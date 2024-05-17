@@ -1,0 +1,3 @@
+fn addition(): i32 {
+    return 5 + 17;
+}
