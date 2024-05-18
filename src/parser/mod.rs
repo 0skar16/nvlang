@@ -64,6 +64,10 @@ impl Parser {
         todo!()
     }
 
+    fn can_parse(&self) -> bool {
+        self.token_stream.len() - self.pos > 0
+    }
+
     fn to_first(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
