@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     let lexer = Lexer::new(source.chars(), filename.clone());
     let token_stream = lexer.tokenize()?;
     let parser = Parser::new(token_stream, filename);
-    let module = parser.parse().map_err(|e| std::io::Error::other(e.to_string()))?;
+    let module = parser.parse_module().map_err(|e| std::io::Error::other(e.to_string()))?;
     dbg!(&module);
     Ok(())
 }

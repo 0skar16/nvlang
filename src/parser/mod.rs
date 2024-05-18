@@ -60,7 +60,7 @@ impl Parser {
             filename: filename.map(|f| f.into()).unwrap_or("code".into()),
         }
     }
-    pub fn parse(mut self) -> ParserResult<Module> {
+    pub fn parse_module(mut self) -> ParserResult<Module> {
         todo!()
     }
 
