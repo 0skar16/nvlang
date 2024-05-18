@@ -64,7 +64,7 @@ impl Parser {
         todo!()
     }
 
-    fn to_first(&mut self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
+    fn to_first(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
         loop {
@@ -80,7 +80,7 @@ impl Parser {
         }
         Ok(end)
     }
-    fn to_first_minding_blocks(&mut self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
+    fn to_first_minding_blocks(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
         let mut i = 0;
@@ -111,7 +111,7 @@ impl Parser {
         }
         Ok(end)
     }
-    fn to_last(&mut self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
+    fn to_last(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
         loop {
@@ -126,7 +126,7 @@ impl Parser {
         }
         Ok(end)
     }
-    fn to_last_minding_blocks(&mut self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
+    fn to_last_minding_blocks(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
         let mut i = 0;
@@ -157,7 +157,7 @@ impl Parser {
         }
         Ok(end)
     }
-    fn isolate_block(&mut self, _end: usize) -> ParserResult<usize> {
+    fn isolate_block(&self, _end: usize) -> ParserResult<usize> {
         let mut i = 1;
         let mut end = self.pos - 1;
         let mut o = 0;
@@ -220,7 +220,7 @@ impl Parser {
         Ok(tok)
     }
 
-    fn peek(&mut self, offset: isize, end: usize) -> ParserResult<Token> {
+    fn peek(&self, offset: isize, end: usize) -> ParserResult<Token> {
         if end as isize - (self.pos as isize + offset) <= 0 {
             let tk = self.peek(offset - 1, self.token_stream.len())?;
             return Err(ParserError::UnexpectedEos {
