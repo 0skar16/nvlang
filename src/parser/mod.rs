@@ -1,10 +1,11 @@
+use std::collections::BTreeMap;
 use std::rc::Rc;
 
 use thiserror::Error;
 
 use crate::lexer::token::{Punctuation, Token, TokenKind, TokenKindDesc};
 
-use crate::ast::Module;
+use crate::ast::{Module, UsePath, UseSource, Used};
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum ParserError {
     #[error("Parser errored:\n\tUnexpected token [{:?}:`{}`] at {}:{}:{}", tok.token, tok.contents, filename, tok.line, tok.col)]
@@ -61,6 +62,33 @@ impl Parser {
         }
     }
     pub fn parse_module(mut self) -> ParserResult<Module> {
+        let end = self.token_stream.len();
+        
+        let mut sub_modules: Vec<String> = vec![];
+        let mut mappings: BTreeMap<String, String> = BTreeMap::new();
+        let mut uses: Vec<(UseSource, UsePath, Used)> = vec![];
+
+        while self.can_parse() && self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Mod) {
+            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Mod))?;
+            self.eat_ex_kind(end, TokenKind::ID("declare".into()))?;
+            let tok = self.eat_ex(end, TokenKindDesc::ID)?;
+            let TokenKind::ID(ref id) = tok.token else { unreachable!() };
+            match id.as_ref() {
+                "mod" => {
+                    let TokenKind::ID(module_name) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                    sub_modules.push(module_name.to_string());
+                },
+                "map" => {
+                    let TokenKind::ID(target) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                    self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Colon))?;
+                    let TokenKind::ID(source) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                    mappings.insert(target.to_string(), source.to_string());
+                },
+                "use" => todo!(),
+                _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() })
+            }
+            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Semicolon))?;
+        }
         todo!()
     }
 
