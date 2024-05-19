@@ -40,7 +40,7 @@ pub struct Function {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Statement {
-    Call(Box<Statement>, Vec<Statement>, bool),
+    Call(Box<Statement>, Vec<Statement>),
     Get(Rc<str>),
     Child(Box<Statement>, Rc<str>),
     Method(Box<Statement>, Rc<str>),
