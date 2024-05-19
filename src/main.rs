@@ -14,7 +14,7 @@ struct Cli {
 
 fn main() -> Result<()> {
     let cli = Cli::try_parse()?;
-    let filename: Option<Rc<String>> = cli
+    let filename: Option<Rc<str>> = cli
         .input
         .file_name()
         .map(|f| f.to_string_lossy().into());
