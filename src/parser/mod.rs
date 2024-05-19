@@ -70,35 +70,35 @@ impl Parser {
         let mut uses: Vec<Use> = vec![];
 
         while self.can_parse() && self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Mod) {
-            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Mod))?;
-            self.eat_ex_kind(end, TokenKind::ID("declare".into()))?;
-            let tok = self.eat_ex(end, TokenKindDesc::ID)?;
+            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Mod), end)?;
+            self.eat_ex_kind(TokenKind::ID("declare".into()), end)?;
+            let tok = self.eat_ex(TokenKindDesc::ID, end)?;
             let TokenKind::ID(ref id) = tok.token else { unreachable!() };
             match id.as_ref() {
                 "mod" => {
-                    let TokenKind::ID(module_name) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                    let TokenKind::ID(module_name) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
                     sub_modules.push(module_name.to_string());
                 },
                 "map" => {
-                    let TokenKind::ID(target) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
-                    self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Colon))?;
-                    let TokenKind::ID(source) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                    let TokenKind::ID(target) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
+                    let TokenKind::ID(source) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
                     mappings.insert(target.to_string(), source.to_string());
                 },
                 "use" => {
                     let source_tok = self.peek(0, end)?;
                     let source = match source_tok.token {
                         TokenKind::Punctuation(Punctuation::LeftParen) => {
-                            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::LeftParen))?;
-                            self.eat_ex_kind(end, TokenKind::ID("c".into()))?;
-                            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::RightParen))?;
-                            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Slash))?;
+                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftParen), end)?;
+                            self.eat_ex_kind(TokenKind::ID("c".into()), end)?;
+                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightParen), end)?;
+                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Slash), end)?;
                             UseSource::CExternal
                         },
                         TokenKind::ID(id) => {
                             if id.as_ref() == "self" {
-                                self.eat_ex_kind(end, TokenKind::ID("self".into()))?;
-                                self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Slash))?;
+                                self.eat_ex_kind(TokenKind::ID("self".into()), end)?;
+                                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Slash), end)?;
                                 UseSource::Internal
                             } else {
                                 UseSource::External
@@ -108,32 +108,32 @@ impl Parser {
                     };
                     let mut path = Vec::new();
                     while self.peek(1, end)?.token == TokenKind::Punctuation(Punctuation::Slash) {
-                        let e_tok = self.eat_ex(end, TokenKindDesc::ID)?;
+                        let e_tok = self.eat_ex(TokenKindDesc::ID, end)?;
                         
                         let TokenKind::ID(e) = e_tok.token else { unreachable!() };
                         path.push(e);
 
-                        self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Slash))?;
+                        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Slash), end)?;
 
                     }
 
                     let mut used = Vec::new();
                     if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::LeftBracket) {
-                        self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::LeftBracket))?;
+                        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftBracket), end)?;
                         loop {
                             
-                            let TokenKind::ID(e) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                            let TokenKind::ID(e) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
                             used.push(e);
 
                             if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::RightBracket) {
-                                self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::RightBracket))?;
+                                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightBracket), end)?;
                                 break;
                             } else {
-                                self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Comma))?;
+                                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Comma), end)?;
                             }
                         }
                     } else {
-                        let TokenKind::ID(e) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                        let TokenKind::ID(e) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
                         used.push(e);
                     }
                     
@@ -145,7 +145,7 @@ impl Parser {
                 },
                 _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() })
             }
-            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Semicolon))?;
+            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
         }
         todo!()
     }
@@ -154,7 +154,7 @@ impl Parser {
         self.token_stream.len() - self.pos > 0
     }
 
-    fn to_first(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
+    fn to_first(&self, _tok: TokenKind, _end: usize) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
         loop {
@@ -170,7 +170,7 @@ impl Parser {
         }
         Ok(end)
     }
-    fn to_first_minding_blocks(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
+    fn to_first_minding_blocks(&self, _tok: TokenKind, _end: usize) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
         let mut i = 0;
@@ -201,7 +201,7 @@ impl Parser {
         }
         Ok(end)
     }
-    fn to_last(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
+    fn to_last(&self, _tok: TokenKind, _end: usize) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
         loop {
@@ -216,7 +216,7 @@ impl Parser {
         }
         Ok(end)
     }
-    fn to_last_minding_blocks(&self, _end: usize, _tok: TokenKind) -> ParserResult<usize> {
+    fn to_last_minding_blocks(&self, _tok: TokenKind, _end: usize) -> ParserResult<usize> {
         let mut end = self.pos;
         let mut o = 0;
         let mut i = 0;
@@ -284,7 +284,7 @@ impl Parser {
         Ok(self.token_stream[self.pos - 1].clone())
     }
     
-    fn eat_ex(&mut self, end: usize, ex_tok: TokenKindDesc) -> ParserResult<Token> {
+    fn eat_ex(&mut self, ex_tok: TokenKindDesc, end: usize) -> ParserResult<Token> {
         let tok = self.eat(end)?;
         if ex_tok != tok.token {
             self.pos -= 1;
@@ -297,7 +297,7 @@ impl Parser {
         Ok(tok)
     }
 
-    fn eat_ex_kind(&mut self, end: usize, ex_tok_kind: TokenKind) -> ParserResult<Token> {
+    fn eat_ex_kind(&mut self, ex_tok_kind: TokenKind, end: usize) -> ParserResult<Token> {
         let tok = self.eat(end)?;
         if ex_tok_kind != tok.token {
             self.pos -= 1;
