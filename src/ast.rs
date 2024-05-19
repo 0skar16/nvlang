@@ -42,26 +42,57 @@ pub struct Function {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Statement {
-    Call(Box<Statement>, Vec<Statement>),
+    Call {
+        called: Box<Statement>, 
+        args: Vec<Statement>,
+    },
     Get(Str),
-    Child(Box<Statement>, Str),
-    Method(Box<Statement>, Str),
-    Let(Str, Type, Option<Box<Statement>>),
-    Assignment(Box<Statement>, Box<Statement>),
-    Operation(Box<Statement>, Operation, Option<Box<Statement>>),
-    OperationAssignment(Box<Statement>, Operation, Box<Statement>),
+    Child{
+        parent: Box<Statement>,
+        child: Str,
+    },
+    Let {
+        name: Str, 
+        _type: Type, 
+        value: Option<Box<Statement>>,
+    },
+    Assignment {
+        target: Box<Statement>, 
+        value: Box<Statement>,
+    },
+    Operation{
+        operand: Box<Statement>,
+        operation: Operation, 
+        operand2: Option<Box<Statement>>,
+    },
+    OperationAssignment{
+        target: Box<Statement>, 
+        operation: Operation, 
+        operand: Box<Statement>,
+    },
     Literal(Literal),
     Return(Box<Statement>),
-    For(Box<[Statement; 3]>, Block),
-    While(Box<Statement>, Block),
-    If(
-        Box<Statement>,
-        Block,
-        Vec<(Statement, Block)>,
-        Option<Block>,
-    ),
+    For{
+        init: Box<Statement>,
+        condition: Box<Statement>,
+        change: Box<Statement>,
+        block: Block,
+    },
+    While{
+        condition: Box<Statement>, 
+        block: Block,
+    },
+    If{
+        condition: Box<Statement>,
+        block: Block,
+        else_ifs: Vec<(Statement, Block)>,
+        _else: Option<Block>,
+    },
     Paren(Box<Statement>),
-    Index(Box<Statement>, Box<Statement>),
+    Index{
+        source: Box<Statement>, 
+        index: Box<Statement>,
+    },
     LoopOperation(LoopOp),
     Ref(Box<Statement>),
     Null,
