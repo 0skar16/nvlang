@@ -1,19 +1,19 @@
 use std::fmt::{Debug, Write};
 use std::{ops::Range, rc::Rc};
-
+use crate::Str;
 use super::Lexer;
 
 #[derive(Clone, PartialEq)]
 pub struct Token {
     pub token: TokenKind,
-    pub contents: Rc<str>,
+    pub contents: Str,
     pub pos: Range<usize>,
     pub line: u32,
     pub col: u32,
-    pub filename: Rc<str>,
+    pub filename: Str,
 }
 impl Token {
-    pub fn new(lexer: &Lexer, token: TokenKind, contents: Rc<str>, filename: Rc<str>) -> Token {
+    pub fn new(lexer: &Lexer, token: TokenKind, contents: Str, filename: Str) -> Token {
         Token {
             token,
             pos: lexer.pos..lexer.pos + contents.len(),
@@ -53,8 +53,8 @@ impl Debug for TokenStream {
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenKind {
-    ID(Rc<str>),
-    String(Rc<str>),
+    ID(Str),
+    String(Str),
     Punctuation(Punctuation),
     Number(Number),
     _Eof,

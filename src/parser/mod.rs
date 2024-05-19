@@ -5,7 +5,8 @@ use thiserror::Error;
 
 use crate::lexer::token::{Punctuation, Token, TokenKind, TokenKindDesc};
 
-use crate::ast::{Module, UsePath, UseSource, Used};
+use crate::ast::{Module, Use, UseSource};
+use crate::Str;
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum ParserError {
     #[error("Parser errored:\n\tUnexpected token [{:?}:`{}`] at {}:{}:{}", tok.token, tok.contents, filename, tok.line, tok.col)]
@@ -50,11 +51,11 @@ pub type ParserResult<T> = std::result::Result<T, ParserError>;
 pub struct Parser {
     pos: usize,
     token_stream: Rc<[Token]>,
-    filename: Rc<str>,
+    filename: Str,
 }
 
 impl Parser {
-    pub fn new(token_stream: impl Into<Rc<[Token]>>, filename: Option<impl Into<Rc<str>>>) -> Self {
+    pub fn new(token_stream: impl Into<Rc<[Token]>>, filename: Option<impl Into<Str>>) -> Self {
         Self {
             pos: 0,
             token_stream: token_stream.into(),
@@ -66,7 +67,7 @@ impl Parser {
         
         let mut sub_modules: Vec<String> = vec![];
         let mut mappings: BTreeMap<String, String> = BTreeMap::new();
-        let mut uses: Vec<(UseSource, UsePath, Used)> = vec![];
+        let mut uses: Vec<Use> = vec![];
 
         while self.can_parse() && self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Mod) {
             self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Mod))?;

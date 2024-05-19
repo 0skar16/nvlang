@@ -1,6 +1,7 @@
 pub mod token;
 use token::*;
 
+use crate::Str;
 use std::{rc::Rc, str::Chars};
 
 use thiserror::Error;
@@ -41,12 +42,12 @@ pub struct Lexer {
     pos: usize,
     // the output
     token_stream: Vec<Token>,
-    filename: Rc<str>,
+    filename: Str,
 }
 
 impl Lexer {
     // we take in a character iterator because it's more convenient and a filename for error creation
-    pub fn new(chars: Chars<'_>, filename: Option<impl Into<Rc<str>>>) -> Lexer {
+    pub fn new(chars: Chars<'_>, filename: Option<impl Into<Str>>) -> Lexer {
         Self {
             chars: chars.collect(),
             token_stream: vec![],
@@ -81,7 +82,7 @@ impl Lexer {
         }
         let tok = match try_next_char!(self) {
             '"' => {
-                let s: Rc<str> = {
+                let s: Str = {
                     let mut out = String::new();
                     loop {
                         let char = self.next_char_unfiltered();
@@ -269,7 +270,7 @@ impl Lexer {
                 if c.is_alphabetic() || c == '_' {
                     let mut id: String = c.into();
                     id.push_str(&self.take_while(|c| c.is_alphanumeric() || c == '_'));
-                    let id: Rc<str> = id.into();
+                    let id: Str = id.into();
                     return (Ok(token!(self; TokenKind::ID(id.clone()), id)), false);
                 }
                 throw_unexpected_char!(c, self)
@@ -286,7 +287,7 @@ impl Lexer {
             }
         }
     }
-    fn take_until(&mut self, pattern: &str) -> Rc<str> {
+    fn take_until(&mut self, pattern: &str) -> Str {
         let pattern: Vec<char> = pattern.chars().collect();
         let mut pos = 0;
         let mut out = String::new();

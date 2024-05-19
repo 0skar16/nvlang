@@ -1,6 +1,7 @@
 use std::{
     collections::BTreeMap, hash::Hash, ops::{Deref, DerefMut}, rc::Rc
 };
+use crate::Str;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Module {
@@ -11,6 +12,7 @@ pub struct Module {
     pub function: BTreeMap<String, Function>,
 }
 
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Use {
     source: UseSource,
     path: Vec<String>,
@@ -41,10 +43,10 @@ pub struct Function {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Statement {
     Call(Box<Statement>, Vec<Statement>),
-    Get(Rc<str>),
-    Child(Box<Statement>, Rc<str>),
-    Method(Box<Statement>, Rc<str>),
-    Let(Rc<str>, Type, Option<Box<Statement>>),
+    Get(Str),
+    Child(Box<Statement>, Str),
+    Method(Box<Statement>, Str),
+    Let(Str, Type, Option<Box<Statement>>),
     Assignment(Box<Statement>, Box<Statement>),
     Operation(Box<Statement>, Operation, Option<Box<Statement>>),
     OperationAssignment(Box<Statement>, Operation, Box<Statement>),
@@ -82,7 +84,7 @@ pub enum Type {
     Ref(Rc<Type>),
     Slice(Rc<Type>),
     Ptr(Rc<Type>),
-    Struct(Rc<str>),
+    Struct(Str),
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -138,7 +140,7 @@ pub enum Operation {
 pub enum Literal {
     Integer(i128),
     Float(f64),
-    String(Rc<str>),
+    String(Str),
     Boolean(bool),
     Slice(Vec<Statement>),
 }
