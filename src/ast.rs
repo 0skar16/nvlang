@@ -5,14 +5,17 @@ use std::{
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Module {
     pub sub_modules: Vec<String>,
-    pub uses: Vec<(UseSource, UsePath, Used)>,
+    pub uses: Vec<Use>,
     pub mapping: BTreeMap<String, String>,
     pub entries: BTreeMap<String, Entry>,
     pub function: BTreeMap<String, Function>,
 }
 
-pub type UsePath = Vec<String>;
-pub type Used = Vec<String>;
+pub struct Use {
+    source: UseSource,
+    path: Vec<String>,
+    used: Vec<String>,
+}
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub enum UseSource {
