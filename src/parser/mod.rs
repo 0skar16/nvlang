@@ -107,7 +107,7 @@ impl Parser {
                         _ => return Err(ParserError::UnexpectedToken { tok: source_tok, filename: self.filename.to_string() }),
                     };
                     let mut path = Vec::new();
-                    loop {
+                    while self.peek(1, end)?.token == TokenKind::Punctuation(Punctuation::Slash) {
                         let e_tok = self.eat_ex(end, TokenKindDesc::ID)?;
                         
                         let TokenKind::ID(e) = e_tok.token else { unreachable!() };
@@ -115,9 +115,6 @@ impl Parser {
 
                         self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Slash))?;
 
-                        if self.peek(1, end)?.token != TokenKind::Punctuation(Punctuation::Slash) {
-                            break;
-                        }
                     }
 
                     let mut used = Vec::new();
