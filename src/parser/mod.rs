@@ -85,7 +85,67 @@ impl Parser {
                     let TokenKind::ID(source) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
                     mappings.insert(target.to_string(), source.to_string());
                 },
-                "use" => todo!(),
+                "use" => {
+                    let source_tok = self.peek(0, end)?;
+                    let source = match source_tok.token {
+                        TokenKind::Punctuation(Punctuation::LeftParen) => {
+                            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::LeftParen))?;
+                            self.eat_ex_kind(end, TokenKind::ID("c".into()))?;
+                            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::RightParen))?;
+                            self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Slash))?;
+                            UseSource::CExternal
+                        },
+                        TokenKind::ID(id) => {
+                            if id.as_ref() == "self" {
+                                self.eat_ex_kind(end, TokenKind::ID("self".into()))?;
+                                self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Slash))?;
+                                UseSource::Internal
+                            } else {
+                                UseSource::External
+                            }
+                        },
+                        _ => return Err(ParserError::UnexpectedToken { tok: source_tok, filename: self.filename.to_string() }),
+                    };
+                    let mut path = Vec::new();
+                    loop {
+                        let e_tok = self.eat_ex(end, TokenKindDesc::ID)?;
+                        
+                        let TokenKind::ID(e) = e_tok.token else { unreachable!() };
+                        path.push(e);
+
+                        self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Slash))?;
+
+                        if self.peek(1, end)?.token != TokenKind::Punctuation(Punctuation::Slash) {
+                            break;
+                        }
+                    }
+
+                    let mut used = Vec::new();
+                    if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::LeftBracket) {
+                        self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::LeftBracket))?;
+                        loop {
+                            
+                            let TokenKind::ID(e) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                            used.push(e);
+
+                            if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::RightBracket) {
+                                self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::RightBracket))?;
+                                break;
+                            } else {
+                                self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Comma))?;
+                            }
+                        }
+                    } else {
+                        let TokenKind::ID(e) = self.eat_ex(end, TokenKindDesc::ID)?.token else { unreachable!() };
+                        used.push(e);
+                    }
+                    
+                    uses.push(Use {
+                        source,
+                        path: path.into(),
+                        used: used.into(),
+                    });
+                },
                 _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() })
             }
             self.eat_ex_kind(end, TokenKind::Punctuation(Punctuation::Semicolon))?;

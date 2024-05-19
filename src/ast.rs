@@ -14,9 +14,9 @@ pub struct Module {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Use {
-    source: UseSource,
-    path: Vec<String>,
-    used: Vec<String>,
+    pub source: UseSource,
+    pub path: Rc<[Str]>,
+    pub used: Rc<[Str]>,
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
