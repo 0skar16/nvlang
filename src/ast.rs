@@ -7,9 +7,9 @@ use crate::Str;
 pub struct Module {
     pub sub_modules: Vec<String>,
     pub uses: Vec<Use>,
-    pub mapping: BTreeMap<String, String>,
+    pub mappings: BTreeMap<String, String>,
     pub entries: BTreeMap<String, Entry>,
-    pub function: BTreeMap<String, Function>,
+    pub functions: BTreeMap<String, Function>,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]

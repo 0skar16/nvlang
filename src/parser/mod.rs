@@ -147,7 +147,19 @@ impl Parser {
             }
             self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
         }
-        todo!()
+
+        let mut entries = BTreeMap::new();
+        let mut functions = BTreeMap::new();
+
+        
+
+        Ok(Module {
+            sub_modules,
+            uses,
+            mappings,
+            entries,
+            functions,
+        })
     }
 
     fn can_parse(&self) -> bool {
