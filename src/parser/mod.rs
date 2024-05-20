@@ -151,7 +151,15 @@ impl Parser {
         let mut entries = BTreeMap::new();
         let mut functions = BTreeMap::new();
 
-        
+        while self.can_parse() {
+            let tok = self.eat_ex(TokenKindDesc::ID, end)?;
+            let TokenKind::ID(ref t) = tok.token else { unreachable!() };
+            match t.as_ref() {
+                "entry" => todo!(),
+                "function" => todo!(),
+                _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() }),
+            }
+        }
 
         Ok(Module {
             sub_modules,
