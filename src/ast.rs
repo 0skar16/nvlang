@@ -8,8 +8,8 @@ pub struct Module {
     pub sub_modules: Vec<String>,
     pub uses: Vec<Use>,
     pub mappings: BTreeMap<String, String>,
-    pub entries: BTreeMap<String, Entry>,
-    pub functions: BTreeMap<String, Function>,
+    pub entries: BTreeMap<Str, Entry>,
+    pub functions: BTreeMap<Str, Function>,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -28,16 +28,20 @@ pub enum UseSource {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Entry {
-    pub args: Vec<(String, Type)>,
-    pub ret_type: Type,
+    pub type_sig: TypeSignature,
     pub block: Block,
 }
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Function {
-    pub args: Vec<(String, Type)>,
-    pub ret_type: Type,
+    pub type_sig: TypeSignature,
     pub id: u64,
     pub block: Block,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct TypeSignature {
+    pub args: Rc<[(Str, Type)]>,
+    pub ret_type: Type,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -100,7 +104,6 @@ pub enum Statement {
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Type {
-    Any,
     Char,
     F32,
     F64,
@@ -112,9 +115,9 @@ pub enum Type {
     U16,
     U32,
     U64,
-    Ref(Rc<Type>),
-    Slice(Rc<Type>),
-    Ptr(Rc<Type>),
+    Ref(Box<Type>),
+    Slice(Box<Type>),
+    Ptr(Box<Type>),
     Struct(Str),
 }
 
@@ -129,7 +132,7 @@ pub enum LoopOp {
     Continue,
 }
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-pub struct Block(pub Vec<Statement>);
+pub struct Block(pub Rc<[Statement]>);
 
 impl DerefMut for Block {
     fn deref_mut(&mut self) -> &mut Self::Target {
@@ -137,7 +140,7 @@ impl DerefMut for Block {
     }
 }
 impl Deref for Block {
-    type Target = Vec<Statement>;
+    type Target = Rc<[Statement]>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

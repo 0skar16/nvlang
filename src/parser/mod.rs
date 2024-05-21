@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use crate::lexer::token::{Punctuation, Token, TokenKind, TokenKindDesc};
 
-use crate::ast::{Module, Use, UseSource};
+use crate::ast::{Block, Entry, Function, Module, Type, TypeSignature, Use, UseSource};
 use crate::Str;
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum ParserError {
@@ -155,8 +155,33 @@ impl Parser {
             let tok = self.eat_ex(TokenKindDesc::ID, end)?;
             let TokenKind::ID(ref t) = tok.token else { unreachable!() };
             match t.as_ref() {
-                "entry" => todo!(),
-                "function" => todo!(),
+                "entry" => {
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Mod), end)?;
+                    
+                    let TokenKind::ID(name) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
+
+                    let type_sig = self.parse_type_signature(end)?;
+
+                    let block = self.parse_block(end)?;
+
+                    entries.insert(name, Entry {
+                        type_sig,
+                        block,
+                    });
+                },
+                "function" => {
+                    let TokenKind::ID(name) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
+
+                    let type_sig = self.parse_type_signature(end)?;
+
+                    let block = self.parse_block(end)?;
+
+                    functions.insert(name, Function {
+                        type_sig,
+                        block,
+                        id: 0 // TODO,
+                    });
+                },
                 _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() }),
             }
         }
@@ -168,6 +193,89 @@ impl Parser {
             entries,
             functions,
         })
+    }
+
+    fn parse_type_signature(&mut self, end: usize) -> ParserResult<TypeSignature> {
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftParen), end)?;
+
+        let mut args = vec![];
+        loop {
+            let TokenKind::ID(arg_name) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
+
+            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
+
+            let _type = self.parse_type(end)?;
+            
+            args.push((arg_name, _type));
+
+            if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Comma) {
+                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Comma), end)?;
+            }else{
+                break;
+            }
+        }
+
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightParen), end)?;
+
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
+        let ret_type = self.parse_type(end)?;
+
+        Ok(TypeSignature { args: args.into(), ret_type })
+    }
+
+    fn parse_type(&mut self, end: usize) -> ParserResult<Type> {
+        let tok = self.eat(end)?;
+        Ok(match tok.token {
+            TokenKind::Punctuation(Punctuation::LeftSBracket) => {
+                let _end = self.isolate_block(end)?;
+                let _type = self.parse_type(_end)?;
+                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightSBracket), end)?;
+                Type::Slice(Box::new(_type))
+            }
+            TokenKind::ID(id) => match &(*id) {
+                "f32" => Type::F32,
+                "f64" => Type::F64,
+                "i8" => Type::I8,
+                "i16" => Type::I16,
+                "i32" => Type::I32,
+                "i64" => Type::I64,
+                "u8" => Type::U8,
+                "u16" => Type::U16,
+                "u32" => Type::U32,
+                "u64" => Type::U64,
+                "char" => Type::Char,
+                "ref" => {
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftSBracket), end)?;
+                    let _end = self.isolate_block(end)?;
+                    let _type = self.parse_type(_end)?;
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightSBracket), end)?;
+                    Type::Ref(Box::new(_type))
+                },
+                "ptr" => {
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftSBracket), end)?;
+                    let _end = self.isolate_block(end)?;
+                    let _type = self.parse_type(_end)?;
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightSBracket), end)?;
+                    Type::Ptr(Box::new(_type))
+                }
+                _ => Type::Struct(id),
+            },
+            _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() }),
+        })
+    }
+
+    fn parse_block(&mut self, end: usize) -> ParserResult<Block> {
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftBracket), end)?;
+        let _end = self.isolate_block(end)?;
+
+        let mut statements = vec![];
+        while _end - self.pos > 0 {
+            statements.push(todo!("parse statement"));
+        }
+        
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightBracket), end)?;
+
+        Ok(Block(statements.into()))
     }
 
     fn can_parse(&self) -> bool {
