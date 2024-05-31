@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use crate::lexer::token::{Number, Punctuation, Token, TokenKind, TokenKindDesc};
 
-use crate::ast::{Block, Entry, Function, Literal, Module, Statement, Type, TypeSignature, Use, UseSource};
+use crate::ast::{Block, Entry, Extern, Function, Literal, Module, Statement, Type, TypeSignature, Use, UseSource};
 use crate::Str;
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum ParserError {
@@ -68,6 +68,7 @@ impl Parser {
         let mut sub_modules: Vec<String> = vec![];
         let mut mappings: BTreeMap<String, String> = BTreeMap::new();
         let mut uses: Vec<Use> = vec![];
+        let mut extern_uses: Vec<Extern> = vec![];
 
         while self.can_parse() && self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Mod) {
             self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Mod), end)?;
@@ -88,13 +89,6 @@ impl Parser {
                 "use" => {
                     let source_tok = self.peek(0, end)?;
                     let source = match source_tok.token {
-                        TokenKind::Punctuation(Punctuation::LeftParen) => {
-                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftParen), end)?;
-                            self.eat_ex_kind(TokenKind::ID("c".into()), end)?;
-                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightParen), end)?;
-                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Slash), end)?;
-                            UseSource::CExternal
-                        },
                         TokenKind::ID(id) => {
                             if id.as_ref() == "self" {
                                 self.eat_ex_kind(TokenKind::ID("self".into()), end)?;
@@ -143,6 +137,47 @@ impl Parser {
                         used: used.into(),
                     });
                 },
+                "extern" => {
+                    let TokenKind::ID(name) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Mod), end)?;
+
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftParen), end)?;
+
+                    let mut args = vec![];
+                    let mut arg_list;
+                    loop {
+                        arg_list = self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Dot);
+                        if arg_list {
+                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Dot), end)?;
+                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Dot), end)?;
+                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Dot), end)?;
+                            break;
+                        }
+
+                        args.push(self.parse_type(end)?);
+                    
+                        if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Comma) {
+                            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Comma), end)?;
+                        }else{
+                            break;
+                        }
+                    }
+                    
+                
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightParen), end)?;
+                
+                    let ret_type = if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Colon) {
+                        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
+                        self.parse_type(end)?
+                    } else { Type::Null };
+                    
+                    extern_uses.push(Extern {
+                        name,
+                        args: args.into(),
+                        ret_type,
+                        arg_list,
+                    });
+                },
                 _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() })
             }
             self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
@@ -189,6 +224,7 @@ impl Parser {
         Ok(Module {
             sub_modules,
             uses,
+            extern_uses,
             mappings,
             entries,
             functions,

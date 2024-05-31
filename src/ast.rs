@@ -7,9 +7,18 @@ use crate::Str;
 pub struct Module {
     pub sub_modules: Vec<String>,
     pub uses: Vec<Use>,
+    pub extern_uses: Vec<Extern>,
     pub mappings: BTreeMap<String, String>,
     pub entries: BTreeMap<Str, Entry>,
     pub functions: BTreeMap<Str, Function>,
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct Extern {
+    pub name: Str,
+    pub args: Rc<[Type]>,
+    pub ret_type: Type,
+    pub arg_list: bool,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -23,7 +32,6 @@ pub struct Use {
 pub enum UseSource {
     Internal,
     External,
-    CExternal,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
