@@ -207,6 +207,19 @@ impl Parser {
         todo!()
     }
 
+    fn parse_return(&mut self, end: usize) -> ParserResult<Statement> {
+        self.eat_ex_kind(TokenKind::ID("return".into()), end)?;
+
+        let _end =
+            self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
+    
+        let value = self.parse_statement(_end)?;
+
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
+
+        Ok(Statement::Return(Box::new(value)))
+    }
+
     fn parse_let(&mut self, end: usize) -> ParserResult<Statement> {
         let _end =
             self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
