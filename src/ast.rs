@@ -57,7 +57,7 @@ pub enum Statement {
     },
     Let {
         name: Str, 
-        _type: Type, 
+        _type: Option<Type>, 
         value: Option<Box<Statement>>,
     },
     Assignment {
