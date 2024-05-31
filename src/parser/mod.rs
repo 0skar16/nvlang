@@ -240,7 +240,7 @@ impl Parser {
             self.pos = pos;
         }
 
-        if let Ok(call) = self.parse_call(end, true) {
+        if let Ok(call) = dbg!(self.parse_call(end, true)) {
             return Ok(call);
         } else {
             self.pos = pos;
@@ -334,8 +334,10 @@ impl Parser {
 
             args.push(self.parse_statement(__end)?);
 
-            if self.peek(0, _end)?.token != TokenKind::Punctuation(Punctuation::Comma) {
+            if self.peek(0, end)?.token != TokenKind::Punctuation(Punctuation::Comma) {
                 break;
+            } else {
+                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Comma), end)?;
             }
         }
 
