@@ -1,9 +1,8 @@
-%declare mod addition;
 %declare use (c)/stdio/{printf};
 %declare use self/addition/addition;
 %declare map main:main;
 entry %main(argc: i32, argv: ptr[ptr[char]]): i32 {
     a := 5;
-    printf%("5 + 17 = %s\n", addition(a, 17));
+    printf%("Hello world! %i", a);
     return 0;
 }
