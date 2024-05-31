@@ -195,6 +195,14 @@ impl Parser {
         })
     }
 
+    fn parse_standalone_statement(&mut self, end: usize) -> ParserResult<Statement> {
+        todo!()
+    }
+
+    fn parse_statement(&mut self, end: usize) -> ParserResult<Statement> {
+        todo!()
+    }
+
     fn parse_literal(&mut self, end: usize) -> ParserResult<Statement> {
         Ok(match self.peek(0, end)?.token {
             TokenKind::Number(num) => {
@@ -308,7 +316,7 @@ impl Parser {
 
         let mut statements = vec![];
         while _end - self.pos > 0 {
-            statements.push(todo!("parse statement"));
+            statements.push(self.parse_standalone_statement(_end)?);
         }
         
         self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightBracket), end)?;
