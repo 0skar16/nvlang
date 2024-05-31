@@ -310,7 +310,10 @@ impl Parser {
             TokenKind::Number(_) | TokenKind::String(_) => self.parse_literal(end)?,
             TokenKind::ID(id) => match &(**id) {
                 "false" | "true" => self.parse_literal(end)?,
-                _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() }),
+                _ => {
+                    let TokenKind::ID(id) = self.eat_ex(TokenKindDesc::ID, end)?.token else {unreachable!()};
+                    Statement::Get(id)
+                },
             },
             TokenKind::Punctuation(Punctuation::Minus) => self.parse_literal(end)?,
             _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() }),
