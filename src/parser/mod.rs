@@ -66,7 +66,6 @@ impl Parser {
         let end = self.token_stream.len();
         
         let mut sub_modules: Vec<String> = vec![];
-        let mut mappings: BTreeMap<String, String> = BTreeMap::new();
         let mut uses: Vec<Use> = vec![];
         let mut extern_uses: Vec<Extern> = vec![];
 
@@ -79,12 +78,6 @@ impl Parser {
                 "mod" => {
                     let TokenKind::ID(module_name) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
                     sub_modules.push(module_name.to_string());
-                },
-                "map" => {
-                    let TokenKind::ID(target) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
-                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
-                    let TokenKind::ID(source) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
-                    mappings.insert(target.to_string(), source.to_string());
                 },
                 "use" => {
                     let source_tok = self.peek(0, end)?;
@@ -225,7 +218,6 @@ impl Parser {
             sub_modules,
             uses,
             extern_uses,
-            mappings,
             entries,
             functions,
         })

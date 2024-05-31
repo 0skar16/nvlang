@@ -8,7 +8,6 @@ pub struct Module {
     pub sub_modules: Vec<String>,
     pub uses: Vec<Use>,
     pub extern_uses: Vec<Extern>,
-    pub mappings: BTreeMap<String, String>,
     pub entries: BTreeMap<Str, Entry>,
     pub functions: BTreeMap<Str, Function>,
 }
