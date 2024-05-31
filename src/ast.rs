@@ -49,6 +49,7 @@ pub enum Statement {
     Call {
         called: Box<Statement>, 
         args: Vec<Statement>,
+        entry: bool,
     },
     Get(Str),
     Child{
