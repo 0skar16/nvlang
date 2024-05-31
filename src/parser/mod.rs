@@ -169,7 +169,7 @@ impl Parser {
                         block,
                     });
                 },
-                "function" => {
+                "fn" => {
                     let TokenKind::ID(name) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
 
                     let type_sig = self.parse_type_signature(end)?;
