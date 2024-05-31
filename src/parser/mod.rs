@@ -204,7 +204,15 @@ impl Parser {
             self.pos = pos;
         }
 
-        todo!()
+        let tok = self.peek(0, end)?;
+        
+        Ok(match &tok.token {
+            TokenKind::ID(id) => match &(**id) {
+                "return" => self.parse_return(end)?,
+                _ => return Err(ParserError::UnexpectedToken{tok, filename: self.filename.to_string()}),
+            },
+            _ => return Err(ParserError::UnexpectedToken{tok, filename: self.filename.to_string()}),
+        })
     }
 
     fn parse_return(&mut self, end: usize) -> ParserResult<Statement> {
