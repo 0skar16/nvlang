@@ -200,7 +200,17 @@ impl Parser {
     }
 
     fn parse_statement(&mut self, end: usize) -> ParserResult<Statement> {
-        todo!()
+        let tok = self.peek(0, end)?;
+        let stmt = match &tok.token {
+            TokenKind::Number(_) | TokenKind::String(_) => self.parse_literal(end)?,
+            TokenKind::ID(id) => match &(**id) {
+                "false" | "true" => self.parse_literal(end)?,
+                _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() }),
+            },
+            TokenKind::Punctuation(Punctuation::Minus) => self.parse_literal(end)?,
+            _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() }),
+        };
+        Ok(stmt)
     }
 
     fn parse_literal(&mut self, end: usize) -> ParserResult<Statement> {
