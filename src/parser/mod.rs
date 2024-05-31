@@ -32,7 +32,7 @@ pub enum ParserError {
         col: u32,
         filename: String,
     },
-    #[error("Parser errored:\n\tUnexpected end of Token Stream, expected: [{ex:?}] at {line}:{col}:{filename}")]
+    #[error("Parser errored:\n\tUnexpected end of Token Stream, expected: [{ex:?}] at {filename}:{line}:{col}")]
     UnexpectedEosEx {
         ex: TokenKindDesc,
         line: u32,
