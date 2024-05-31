@@ -3,9 +3,9 @@ use std::rc::Rc;
 
 use thiserror::Error;
 
-use crate::lexer::token::{Punctuation, Token, TokenKind, TokenKindDesc};
+use crate::lexer::token::{Number, Punctuation, Token, TokenKind, TokenKindDesc};
 
-use crate::ast::{Block, Entry, Function, Module, Type, TypeSignature, Use, UseSource};
+use crate::ast::{Block, Entry, Function, Literal, Module, Statement, Type, TypeSignature, Use, UseSource};
 use crate::Str;
 #[derive(Debug, Clone, PartialEq, Error)]
 pub enum ParserError {
@@ -192,6 +192,44 @@ impl Parser {
             mappings,
             entries,
             functions,
+        })
+    }
+
+    fn parse_literal(&mut self, end: usize) -> ParserResult<Statement> {
+        Ok(match self.peek(0, end)?.token {
+            TokenKind::Number(num) => {
+                self.eat_ex(TokenKindDesc::Number, end)?;
+                Statement::Literal(match num {
+                    Number::Float(f) => Literal::Float(f),
+                    Number::Int(i) => Literal::Integer(i as i128),
+                    Number::Hex(h) => Literal::Integer(h as i128),
+                })
+            }
+            TokenKind::String(s) => {
+                self.eat_ex(TokenKindDesc::String, end)?;
+                Statement::Literal(Literal::String(s))
+            }
+            TokenKind::ID(id) => match &(*id) {
+                "true" => {
+                    self.eat_ex(TokenKindDesc::ID, end)?;
+                    Statement::Literal(Literal::Boolean(true))
+                }
+                "false" => {
+                    self.eat_ex(TokenKindDesc::ID, end)?;
+                    Statement::Literal(Literal::Boolean(false))
+                },
+                _ => return Err(ParserError::UnexpectedToken{ tok: self.peek(0, end)?, filename: self.filename.to_string() }),
+            },
+            TokenKind::Punctuation(Punctuation::Minus) => {
+                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Minus), end)?;
+                let TokenKind::Number(num) = self.eat_ex(TokenKindDesc::Number, end)?.token else { unreachable!() };
+                Statement::Literal(match num {
+                    Number::Float(f) => Literal::Float(-f),
+                    Number::Int(i) => Literal::Integer(-(i as i128)),
+                    Number::Hex(h) => Literal::Integer(-(h as i128)),
+                })
+            }
+            _ => return Err(ParserError::UnexpectedToken{tok: self.peek(0, end)?, filename: self.filename.to_string()}),
         })
     }
 
