@@ -55,7 +55,7 @@ pub struct TypeSignature {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Statement {
     Call {
-        called: Box<Statement>, 
+        called: Str, 
         args: Vec<Statement>,
         entry: bool,
     },

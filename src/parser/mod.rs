@@ -240,6 +240,12 @@ impl Parser {
             self.pos = pos;
         }
 
+        if let Ok(call) = self.parse_call(end, true) {
+            return Ok(call);
+        } else {
+            self.pos = pos;
+        }
+
         let tok = self.peek(0, end)?;
         
         Ok(match &tok.token {
@@ -291,6 +297,14 @@ impl Parser {
     }
 
     fn parse_statement(&mut self, end: usize) -> ParserResult<Statement> {
+        let pos = self.pos;
+
+        if let Ok(call) = self.parse_call(end, false) {
+            return Ok(call);
+        } else {
+            self.pos = pos;
+        }
+
         let tok = self.peek(0, end)?;
         let stmt = match &tok.token {
             TokenKind::Number(_) | TokenKind::String(_) => self.parse_literal(end)?,
@@ -302,6 +316,36 @@ impl Parser {
             _ => return Err(ParserError::UnexpectedToken { tok, filename: self.filename.to_string() }),
         };
         Ok(stmt)
+    }
+
+    fn parse_call(&mut self, end: usize, standalone: bool) -> ParserResult<Statement> {
+        let TokenKind::ID(called) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
+        
+        let entry = self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Mod), end).is_ok();
+
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftParen), end)?;
+        
+        let _end = self.isolate_block(end)?;
+
+        let mut args = vec![];
+        loop {
+
+            let __end = self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Comma), _end)?;
+
+            args.push(self.parse_statement(__end)?);
+
+            if self.peek(0, _end)?.token != TokenKind::Punctuation(Punctuation::Comma) {
+                break;
+            }
+        }
+
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightParen), end)?;
+
+        if standalone {
+            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
+        }
+
+        Ok(Statement::Call { called, args, entry })
     }
 
     fn parse_literal(&mut self, end: usize) -> ParserResult<Statement> {
