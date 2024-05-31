@@ -120,6 +120,7 @@ pub enum Type {
     Slice(Box<Type>),
     Ptr(Box<Type>),
     Struct(Str),
+    Null,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]

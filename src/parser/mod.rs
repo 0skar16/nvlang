@@ -328,8 +328,10 @@ impl Parser {
 
         self.eat_ex_kind(TokenKind::Punctuation(Punctuation::RightParen), end)?;
 
-        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
-        let ret_type = self.parse_type(end)?;
+        let ret_type = if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Colon) {
+            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
+            self.parse_type(end)?
+        } else { Type::Null };
 
         Ok(TypeSignature { args: args.into(), ret_type })
     }
