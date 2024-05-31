@@ -199,6 +199,32 @@ impl Parser {
         todo!()
     }
 
+    fn parse_let(&mut self, end: usize) -> ParserResult<Statement> {
+        let _end =
+            self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
+        
+        let TokenKind::ID(name) = self.eat_ex(TokenKindDesc::ID, end)?.token else { unreachable!() };
+
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
+
+        let _type = if self.peek(0, end)?.token != TokenKind::Punctuation(Punctuation::Equals) && self.peek(0, end)?.token != TokenKind::Punctuation(Punctuation::Semicolon) {
+            Some(self.parse_type(end)?)
+        } else {None};
+
+        let value = if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Equals) {
+            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Equals), end)?;
+            Some(Box::new(self.parse_statement(_end)?))            
+        } else {None};
+
+        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Semicolon), end)?;
+        
+        Ok(Statement::Let{
+            name,
+            _type,
+            value,
+        })
+    }
+
     fn parse_statement(&mut self, end: usize) -> ParserResult<Statement> {
         let tok = self.peek(0, end)?;
         let stmt = match &tok.token {
