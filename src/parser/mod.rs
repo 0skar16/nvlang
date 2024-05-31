@@ -196,6 +196,14 @@ impl Parser {
     }
 
     fn parse_standalone_statement(&mut self, end: usize) -> ParserResult<Statement> {
+        let pos = self.pos;
+
+        if let Ok(_let) = self.parse_let(end) {
+            return Ok(_let);
+        } else {
+            self.pos = pos;
+        }
+
         todo!()
     }
 
