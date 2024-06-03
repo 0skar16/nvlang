@@ -58,9 +58,11 @@ impl Lexer {
         }
     }
     pub fn tokenize(mut self) -> LexerResult<Rc<[Token]>> {
-        while let (tok, is_eof) = self.next_token()
-            && !is_eof
-        {
+        loop {
+            let (tok, is_eof) = self.next_token();
+            if is_eof {
+                break;
+            }
             self.token_stream.push(tok?);
         }
         Ok(self.token_stream.into())
@@ -186,8 +188,7 @@ impl Lexer {
 
                 // if next two characters are 0x start get a hex number
                 if c == '0'
-                    && let Some(char) = self.peek_char(0)
-                    && (char == 'x' || char == 'X')
+                    && (self.peek_char(0) == Some('x') || self.peek_char(0) == Some('X'))
                 {
                     // we have already peeked at the character, as such we know what it is and don't do anything with the output
                     let _ = self.next_char_unfiltered();
@@ -314,9 +315,7 @@ impl Lexer {
     }
     fn take_while(&mut self, condition: impl Fn(char) -> bool) -> String {
         let mut out = String::new();
-        while let Some(char) = self.peek_char(0)
-            && condition(char)
-        {
+        while self.peek_char(0).map(|c| condition(c)).unwrap_or_default()  {
             out.push(self.next_char_unfiltered().unwrap());
         }
         out
