@@ -1,8 +1,8 @@
-use std::{path::PathBuf, rc::Rc};
+use std::{collections::BTreeMap, path::PathBuf, rc::Rc};
 
 use anyhow::Result;
 use clap::{arg, command, Parser as ClapParser};
-use nvc::{lexer::Lexer, parser::Parser};
+use nvc::{compiler::{module::ExpandedModuleTree, Compiler}, lexer::Lexer, parser::Parser};
 
 #[derive(ClapParser, Debug)]
 #[command(author, version, about="Compiler for NVLang", long_about = None)]
@@ -24,5 +24,14 @@ fn main() -> Result<()> {
     let parser = Parser::new(token_stream, filename);
     let module = parser.parse_module().map_err(|e| std::io::Error::other(e.to_string()))?;
     dbg!(&module);
+    let module_tree = ExpandedModuleTree {
+        modules: BTreeMap::new(),
+        uses: module.uses,
+        extern_uses: module.extern_uses,
+        entries: module.entries,
+        functions: module.functions,
+    };
+    let mut compiler = Compiler::new(module_tree);
+    let modules = compiler.build().map_err(|e| std::io::Error::other(e.to_string()))?;
     Ok(())
 }
