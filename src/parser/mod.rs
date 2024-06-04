@@ -232,7 +232,7 @@ impl Parser {
             self.pos = pos;
         }
 
-        if let Ok(call) = dbg!(self.parse_call(end, true)) {
+        if let Ok(call) = self.parse_call(end, true) {
             return Ok(call);
         } else {
             self.pos = pos;
