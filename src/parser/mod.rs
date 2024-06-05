@@ -6,7 +6,7 @@ use thiserror::Error;
 use crate::lexer::token::{Number, Punctuation, Token, TokenKind, TokenKindDesc};
 
 use crate::ast::{
-    Block, Entry, Extern, Function, Literal, Module, Statement, Type, TypeSignature, Use, UseSource,
+    Block, Entry, Extern, Function, Literal, Module, Operation, Statement, Type, TypeSignature, Use, UseSource
 };
 use crate::Str;
 #[derive(Debug, Clone, PartialEq, Error)]
@@ -355,7 +355,7 @@ impl Parser {
         }
 
         let tok = self.peek(0, end)?;
-        let stmt = match &tok.token {
+        let mut stmt = match &tok.token {
             TokenKind::Number(_) | TokenKind::String(_) => self.parse_literal(end)?,
             TokenKind::ID(id) => match &(**id) {
                 "false" | "true" => self.parse_literal(end)?,
@@ -374,7 +374,116 @@ impl Parser {
                 })
             }
         };
+
+        loop {
+            if let Ok(tok) = self.peek(0, end) {
+                stmt = match tok.token {
+                    TokenKind::Punctuation(p) => {
+                        if p.is_operation() {
+                            self.parse_operation(stmt, end)?
+                        } else {
+                            break;
+                        }
+                    },
+                    _ => break,
+                }
+            } else {
+                break;
+            }
+        }
+
         Ok(stmt)
+    }
+
+    fn parse_operation(&mut self, mut operand: Statement, end: usize) -> ParserResult<Statement> {
+        let mut mul_end =
+            self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Asterisk), end)?;
+
+        let div_end =
+            self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Slash), end)?;
+        if div_end != self.pos && div_end < end {
+            if mul_end != self.pos {
+                mul_end = mul_end.min(div_end);
+            } else {
+                mul_end = div_end;
+            }
+        }
+
+        let mod_end =
+            self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Mod), end)?;
+        if mod_end != self.pos && mod_end < end {
+            if mul_end != self.pos {
+                mul_end = mul_end.min(mod_end);
+            } else {
+                mul_end = mod_end;
+            }
+        }
+
+        if mul_end != self.pos && mul_end < end {
+            operand = self.parse_operation(operand, mul_end)?;
+        }
+
+        let mut add_end =
+            self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Plus), end)?;
+
+        let sub_end =
+            self.to_first_minding_blocks(TokenKind::Punctuation(Punctuation::Minus), end)?;
+        if sub_end != self.pos && sub_end < end {
+            if add_end != self.pos {
+                add_end = add_end.min(sub_end);
+            } else {
+                add_end = sub_end;
+            }
+        }
+
+        if add_end != self.pos && add_end < end {
+            operand = self.parse_operation(operand, add_end)?;
+        }
+
+        let op = self.eat_ex(TokenKindDesc::Punctuation, end)?;
+        let op = match op.token {
+            TokenKind::Punctuation(punct) => match punct {
+                Punctuation::Mod => Operation::Mod,
+                Punctuation::Asterisk => Operation::Mul,
+                Punctuation::Minus => Operation::Sub,
+                Punctuation::Slash => Operation::Div,
+                Punctuation::Plus => Operation::Add,
+                Punctuation::Exp => Operation::Exp,
+                Punctuation::And => Operation::And,
+                Punctuation::Or => Operation::Or,
+                Punctuation::Not => {
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Equals), end)?;
+                    Operation::NotEqual
+                }
+                Punctuation::LesserThan => {
+                    let tok = self.peek(0, end)?;
+                    if tok.token == TokenKind::Punctuation(Punctuation::Equals) {
+                        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Equals), end)?;
+                        Operation::LE
+                    } else {
+                        Operation::Lesser
+                    }
+                }
+                Punctuation::GreaterThan => {
+                    let tok = self.peek(0, end)?;
+                    if tok.token == TokenKind::Punctuation(Punctuation::Equals) {
+                        self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Equals), end)?;
+                        Operation::GE
+                    } else {
+                        Operation::Greater
+                    }
+                }
+                Punctuation::EqualsTo => Operation::Equal,
+                _ => return Err(ParserError::UnexpectedToken{tok: op, filename: self.filename.to_string()}),
+            },
+            _ => unreachable!(),
+        };
+        let operator = self.parse_statement(end)?;
+        Ok(Statement::Operation{
+            operand: Box::new(operand),
+            operation: op,
+            operand2: Some(Box::new(operator)),
+        })
     }
 
     fn parse_call(&mut self, end: usize, standalone: bool) -> ParserResult<Statement> {
