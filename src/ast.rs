@@ -1,7 +1,10 @@
-use std::{
-    collections::BTreeMap, hash::Hash, ops::{Deref, DerefMut}, rc::Rc
-};
 use crate::Str;
+use std::{
+    collections::BTreeMap,
+    hash::Hash,
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Module {
@@ -54,55 +57,55 @@ pub struct TypeSignature {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum Statement {
     Call {
-        called: Str, 
+        called: Str,
         args: Vec<Statement>,
         entry: bool,
     },
     Get(Str),
-    Child{
+    Child {
         parent: Box<Statement>,
         child: Str,
     },
     Let {
-        name: Str, 
-        _type: Option<Type>, 
+        name: Str,
+        _type: Option<Type>,
         value: Option<Box<Statement>>,
     },
     Assignment {
-        target: Box<Statement>, 
+        target: Box<Statement>,
         value: Box<Statement>,
     },
-    Operation{
+    Operation {
         operand: Box<Statement>,
-        operation: Operation, 
+        operation: Operation,
         operand2: Option<Box<Statement>>,
     },
-    OperationAssignment{
-        target: Box<Statement>, 
-        operation: Operation, 
+    OperationAssignment {
+        target: Box<Statement>,
+        operation: Operation,
         operand: Box<Statement>,
     },
     Literal(Literal),
     Return(Box<Statement>),
-    For{
+    For {
         init: Box<Statement>,
         condition: Box<Statement>,
         change: Box<Statement>,
         block: Block,
     },
-    While{
-        condition: Box<Statement>, 
+    While {
+        condition: Box<Statement>,
         block: Block,
     },
-    If{
+    If {
         condition: Box<Statement>,
         block: Block,
         else_ifs: Vec<(Statement, Block)>,
         _else: Option<Block>,
     },
     Paren(Box<Statement>),
-    Index{
-        source: Box<Statement>, 
+    Index {
+        source: Box<Statement>,
         index: Box<Statement>,
     },
     LoopOperation(LoopOp),
@@ -177,7 +180,6 @@ pub enum Operation {
     BitwiseAnd,
     ShiftLeft,
     ShiftRight,
-
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Literal {

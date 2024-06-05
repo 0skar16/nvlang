@@ -1,6 +1,9 @@
 use std::collections::BTreeMap;
 
-use crate::{ast::{Entry, Extern, Function, Use}, Str};
+use crate::{
+    ast::{Entry, Extern, Function, Use},
+    Str,
+};
 
 pub struct ExpandedModuleTree {
     pub modules: BTreeMap<String, ExpandedModuleTree>,

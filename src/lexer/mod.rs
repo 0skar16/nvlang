@@ -13,20 +13,20 @@ pub enum LexerError {
     #[error("Unexpected char [{char}] at {filename}:{line}:{col}")]
     UnexpectedChar {
         char: char,
-        line: u32, 
+        line: u32,
         col: u32,
         filename: String,
     },
     #[error("Unexpected end of file at {filename}:{line}:{col}")]
     UnexpectedEof {
-        line: u32, 
+        line: u32,
         col: u32,
         filename: String,
     },
     #[error("Expected char [{char}], but didn't get one at {filename}:{line}:{col}")]
     ExpectedCharNotExisting {
         char: char,
-        line: u32, 
+        line: u32,
         col: u32,
         filename: String,
     },
@@ -92,12 +92,9 @@ impl Lexer {
                         let char = if let Ok(char) = char {
                             char
                         } else {
-                            let Err(e) = char else {
-                                unreachable!()
-                            };
+                            let Err(e) = char else { unreachable!() };
                             return (LexerResult::Err(e), false);
                         };
-
 
                         if char == '"' {
                             // end string if the quote is string-ending
@@ -111,29 +108,30 @@ impl Lexer {
                                 match try_next_char!(self) {
                                     // just a zero byte
                                     '0' => out.push('\0'),
-                                    
+
                                     // newline
                                     'n' => out.push('\n'),
                                     // tab
                                     't' => out.push('\t'),
-                                    
+
                                     // not string-ending quote
                                     '"' => out.push('"'),
                                     // backslash
                                     '\\' => out.push('\\'),
-                                    
+
                                     // throw an error because something else after a backslash is not expected
                                     c => throw_unexpected_char!(c, self),
                                 }
-                            }else {
+                            } else {
                                 out.push(char);
                             }
                         }
                     }
                     out
-                }.into();
+                }
+                .into();
                 token!(self; TokenKind::String(s.clone()), format!("\"{}\"", s))
-            },
+            }
             '/' => token!(self;
                 _ => TokenKind::Punctuation(Punctuation::Slash), "/";
                 // these are comments, as such, they need different behaviour than the default token one
@@ -182,14 +180,11 @@ impl Lexer {
             '^' => token!(self; TokenKind::Punctuation(Punctuation::Exp), "^"),
             '!' => token!(self; TokenKind::Punctuation(Punctuation::Not), "!"),
             c => {
-                
                 // Numeric tokens
                 // we don't tokenize negative numbers yet because at this stage they can be mistaken with a subtraction operation
 
                 // if next two characters are 0x start get a hex number
-                if c == '0'
-                    && (self.peek_char(0) == Some('x') || self.peek_char(0) == Some('X'))
-                {
+                if c == '0' && (self.peek_char(0) == Some('x') || self.peek_char(0) == Some('X')) {
                     // we have already peeked at the character, as such we know what it is and don't do anything with the output
                     let _ = self.next_char_unfiltered();
                     let mut number: String = "0x".into();
@@ -233,7 +228,6 @@ impl Lexer {
                             // if is a dot, set found_dot to true to indicate it's a floating-point number
                             found_dot = true;
                         }
-
                     }
                     // set the number string to the slice of number that has been marked out as the number
                     let number = String::from_iter(&chars[..i]);
@@ -315,14 +309,14 @@ impl Lexer {
     }
     fn take_while(&mut self, condition: impl Fn(char) -> bool) -> String {
         let mut out = String::new();
-        while self.peek_char(0).map(|c| condition(c)).unwrap_or_default()  {
+        while self.peek_char(0).map(|c| condition(c)).unwrap_or_default() {
             out.push(self.next_char_unfiltered().unwrap());
         }
         out
     }
     fn next_char_unfiltered(&mut self) -> LexerResult<char> {
         if self.chars.len() - self.pos <= 0 {
-            return Err(LexerError::UnexpectedEof{
+            return Err(LexerError::UnexpectedEof {
                 line: self.line,
                 col: self.col - 1,
                 filename: self.filename.to_string(),
@@ -372,7 +366,7 @@ macro_rules! try_next_char {
 macro_rules! throw_unexpected_char {
     ($char:expr, $lex:expr) => {
         return (
-            Err(LexerError::UnexpectedChar{
+            Err(LexerError::UnexpectedChar {
                 char: $char,
                 line: $lex.line,
                 col: $lex.col - 1,

@@ -1,7 +1,7 @@
+use super::Lexer;
+use crate::Str;
 use std::fmt::{Debug, Write};
 use std::{ops::Range, rc::Rc};
-use crate::Str;
-use super::Lexer;
 
 #[derive(Clone, PartialEq)]
 pub struct Token {

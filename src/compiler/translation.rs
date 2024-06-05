@@ -1,4 +1,9 @@
-use inkwell::{context::Context, types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType}, values::{AnyValueEnum, BasicValueEnum}, AddressSpace};
+use inkwell::{
+    context::Context,
+    types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType},
+    values::{AnyValueEnum, BasicValueEnum},
+    AddressSpace,
+};
 
 use crate::ast::{Type, TypeSignature};
 
@@ -8,13 +13,25 @@ impl Type {
             Type::Char => Type::I8.to_any_llvm_type(llvm_ctx)?,
             Type::F32 => todo!(),
             Type::F64 => todo!(),
-            Type::I8 | Type::U8 | Type::I16 | Type::U16 | Type::I32 | Type::U32 | Type::I64 | Type::U64 => self.to_basic_type(llvm_ctx)?.into_int_type().into(),
+            Type::I8
+            | Type::U8
+            | Type::I16
+            | Type::U16
+            | Type::I32
+            | Type::U32
+            | Type::I64
+            | Type::U64 => self.to_basic_type(llvm_ctx)?.into_int_type().into(),
             Type::Ref(_) => todo!(),
             Type::Slice(_) => todo!(),
             Type::Struct(_) => todo!(),
-            Type::Ptr(ty) => ty.to_basic_type(llvm_ctx)?.ptr_type(AddressSpace::default()).into(),
+            Type::Ptr(ty) => ty
+                .to_basic_type(llvm_ctx)?
+                .ptr_type(AddressSpace::default())
+                .into(),
             Type::Null => AnyTypeEnum::VoidType(llvm_ctx.void_type()),
-            _ => {return None;}
+            _ => {
+                return None;
+            }
         })
     }
     pub(super) fn to_basic_type<'a>(&'a self, llvm_ctx: &'a Context) -> Option<BasicTypeEnum<'a>> {
@@ -32,12 +49,20 @@ impl Type {
             Type::U64 => todo!(),
             Type::Ref(_) => todo!(),
             Type::Slice(_) => todo!(),
-            Type::Ptr(ty) => ty.to_basic_type(llvm_ctx)?.ptr_type(AddressSpace::default()).into(),
+            Type::Ptr(ty) => ty
+                .to_basic_type(llvm_ctx)?
+                .ptr_type(AddressSpace::default())
+                .into(),
             Type::Struct(_) => todo!(),
-            _ => {return None},
+            _ => return None,
         })
     }
-    pub(super) fn fn_type<'a>(&'a self, llvm_ctx: &'a Context, args: &[BasicMetadataTypeEnum<'a>], arg_list: bool) -> Option<FunctionType<'a>> {
+    pub(super) fn fn_type<'a>(
+        &'a self,
+        llvm_ctx: &'a Context,
+        args: &[BasicMetadataTypeEnum<'a>],
+        arg_list: bool,
+    ) -> Option<FunctionType<'a>> {
         Some(match self.to_any_llvm_type(llvm_ctx)? {
             inkwell::types::AnyTypeEnum::FloatType(_) => todo!(),
             inkwell::types::AnyTypeEnum::IntType(ty) => ty.fn_type(args, arg_list),
@@ -62,7 +87,9 @@ impl<'a> IntoBasicValueEnumOption<'a> for AnyValueEnum<'a> {
             AnyValueEnum::PointerValue(v) => v.into(),
             AnyValueEnum::StructValue(v) => v.into(),
             AnyValueEnum::VectorValue(v) => v.into(),
-            _ => {return None;},
+            _ => {
+                return None;
+            }
         })
     }
 }
