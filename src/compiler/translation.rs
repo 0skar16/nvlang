@@ -1,4 +1,4 @@
-use inkwell::{context::Context, types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType}, AddressSpace};
+use inkwell::{context::Context, types::{AnyTypeEnum, BasicMetadataTypeEnum, BasicType, BasicTypeEnum, FunctionType}, values::{AnyValueEnum, BasicValueEnum}, AddressSpace};
 
 use crate::ast::{Type, TypeSignature};
 
@@ -15,19 +15,6 @@ impl Type {
             Type::Ptr(ty) => ty.to_basic_type(llvm_ctx)?.ptr_type(AddressSpace::default()).into(),
             Type::Null => AnyTypeEnum::VoidType(llvm_ctx.void_type()),
             _ => {return None;}
-        })
-    }
-    pub(super) fn to_basic_metadata_type<'a>(&'a self, llvm_ctx: &'a Context) -> Option<BasicMetadataTypeEnum<'a>> {
-        Some(match self {
-            Type::Char => self.to_basic_type(llvm_ctx)?.into(),
-            Type::F32 => todo!(),
-            Type::F64 => todo!(),
-            Type::I8 | Type::U8 | Type::I16 | Type::U16 | Type::I32 | Type::U32 | Type::I64 | Type::U64 => self.to_basic_type(llvm_ctx)?.into(),
-            Type::Ref(_) => todo!(),
-            Type::Slice(_) => todo!(),
-            Type::Struct(_) => todo!(),
-            Type::Ptr(ty) => ty.to_basic_type(llvm_ctx)?.ptr_type(AddressSpace::default()).into(),
-            _ => {return None},
         })
     }
     pub(super) fn to_basic_type<'a>(&'a self, llvm_ctx: &'a Context) -> Option<BasicTypeEnum<'a>> {
@@ -58,6 +45,24 @@ impl Type {
             inkwell::types::AnyTypeEnum::StructType(_) => todo!(),
             inkwell::types::AnyTypeEnum::VoidType(ty) => ty.fn_type(args, arg_list),
             _ => unreachable!(),
+        })
+    }
+}
+
+pub(super) trait IntoBasicValueEnumOption<'a> {
+    fn into_basic_value_enum_opt(self) -> Option<BasicValueEnum<'a>>;
+}
+
+impl<'a> IntoBasicValueEnumOption<'a> for AnyValueEnum<'a> {
+    fn into_basic_value_enum_opt(self) -> Option<BasicValueEnum<'a>> {
+        Some(match self {
+            AnyValueEnum::ArrayValue(v) => v.into(),
+            AnyValueEnum::IntValue(v) => v.into(),
+            AnyValueEnum::FloatValue(v) => v.into(),
+            AnyValueEnum::PointerValue(v) => v.into(),
+            AnyValueEnum::StructValue(v) => v.into(),
+            AnyValueEnum::VectorValue(v) => v.into(),
+            _ => {return None;},
         })
     }
 }

@@ -1,9 +1,10 @@
 use std::{cell::{RefCell, RefMut}, collections::BTreeMap, rc::Rc};
 
 use frame::StackFrame;
-use inkwell::{basic_block::BasicBlock, builder::Builder, context::Context, module::{Linkage, Module}, types::{BasicMetadataTypeEnum, FunctionType}, values::{AnyValueEnum, BasicMetadataValueEnum, BasicValueEnum, FunctionValue}};
+use inkwell::{basic_block::BasicBlock, builder::Builder, context::Context, module::{Linkage, Module}, types::{BasicMetadataTypeEnum, FunctionType}, values::{AnyValue, AnyValueEnum, BasicMetadataValueEnum, BasicValue, BasicValueEnum, FunctionValue}};
 use module::ExpandedModuleTree;
 use thiserror::Error;
+use translation::IntoBasicValueEnumOption;
 
 use crate::{ast::{Block, Literal, Statement, Type, TypeSignature}, Str};
 
@@ -82,7 +83,7 @@ impl Compiler {
 
         for extern_use in &expanded_module.extern_uses {
 
-            let args: Option<Vec<BasicMetadataTypeEnum>> = extern_use.args.iter().map(|arg_type| arg_type.to_basic_metadata_type(&self.llvm_ctx)).collect();
+            let args: Option<Vec<BasicMetadataTypeEnum>> = extern_use.args.iter().map(|arg_type| arg_type.to_basic_type(&self.llvm_ctx).map(|t| t.into())).collect();
             let Some(args) = args else {
                 return Err(todo!());
             };
@@ -99,7 +100,7 @@ impl Compiler {
         }
 
         for (name, entry) in &expanded_module.entries {
-            let args: Option<Vec<BasicMetadataTypeEnum>> = entry.type_sig.args.iter().map(|(_, arg_type)| arg_type.to_basic_metadata_type(&self.llvm_ctx)).collect();
+            let args: Option<Vec<BasicMetadataTypeEnum>> = entry.type_sig.args.iter().map(|(_, arg_type)| arg_type.to_basic_type(&self.llvm_ctx).map(|t| t.into())).collect();
             let Some(args) = args else {
                 return Err(todo!());
             };
@@ -139,12 +140,19 @@ impl Compiler {
     }
     fn build_standalone_statement<'a>(&'a self, mut frame: RefMut<'a, StackFrame<'a>>, builder: &'a Builder<'a>, statement: &Statement) -> CompilerResult<()> {
         match statement {
-            crate::ast::Statement::Call { called, args, entry } => self.build_call(&*frame, builder, called.clone(), args.clone(), *entry)?,
+            crate::ast::Statement::Call { called, args, entry } => {
+                self.build_call(&*frame, builder, called.clone(), args.clone(), *entry)?;
+            },
             crate::ast::Statement::Let { name, _type, value } => self.build_let(frame, builder, name.clone(), _type.clone(), value.clone())?,
             crate::ast::Statement::Assignment { target: _, value: _ } => todo!(),
             crate::ast::Statement::OperationAssignment { target: _, operation: _, operand: _ } => todo!(),
             crate::ast::Statement::Return(value) => {
-                builder.build_return(Some(&self.build_statement(&*frame, builder, None, &value)?.1)).unwrap();
+                let v = self.build_statement(&*frame, builder, None, &value)?.1;
+                if let Some(v) = v {
+                    builder.build_return(Some(&v)).unwrap();
+                } else {
+                    builder.build_return(None).unwrap();
+                }
             },
             crate::ast::Statement::For { init: _, condition: _, change: _, block: _ } => todo!(),
             crate::ast::Statement::While { condition: _, block: _ } => todo!(),
@@ -154,14 +162,17 @@ impl Compiler {
         };
         Ok(())
     }
-    fn build_statement<'a>(&'a self, frame: &StackFrame<'a>, builder: &'a Builder<'a>, ty: Option<Type>, statement: &Statement) -> CompilerResult<(Type, BasicValueEnum)> {
+    fn build_statement<'a>(&'a self, frame: &StackFrame<'a>, builder: &'a Builder<'a>, ty: Option<Type>, statement: &Statement) -> CompilerResult<(Type, Option<BasicValueEnum>)> {
         Ok(match statement {
             Statement::Literal(lit) => {
                 let (ty, value) = self.build_literal(ty.clone(), lit.clone())?;
-                (ty, value.into())
+                (ty, Some(value))
             },
-            Statement::Get(name) => self.build_get(&*frame, ty.clone(), name.clone())?,
-            Statement::Call { called, args, entry } => todo!(),
+            Statement::Get(name) => {
+                let (t, v) = self.build_get(&*frame, ty.clone(), name.clone())?;
+                (t, Some(v))
+            },
+            Statement::Call { called, args, entry } => self.build_call(&*frame, builder, called.clone(), args.clone(), *entry)?,
             Statement::Child { parent, child } => todo!(),
             Statement::Operation { operand, operation, operand2 } => todo!(),
             Statement::Paren(_) => todo!(),
@@ -239,7 +250,7 @@ impl Compiler {
 
         Ok((ty.clone(), *value))
     }
-    fn build_call<'a>(&'a self, frame: &StackFrame<'a>, builder: &'a Builder<'a>, called: Str, args: Vec<Statement>, entry: bool) -> CompilerResult<()> {
+    fn build_call<'a>(&'a self, frame: &StackFrame<'a>, builder: &'a Builder<'a>, called: Str, args: Vec<Statement>, entry: bool) -> CompilerResult<(Type, Option<BasicValueEnum<'a>>)> {
         let (arg_types, ret_type, function, arg_list) = if entry {
             let Some((args, ret_type, arg_list, value)) = frame.entries.get(&called) else {
                 todo!()
@@ -264,11 +275,11 @@ impl Compiler {
                     todo!()
                 }
             };
-            llvm_args.push(self.build_statement(frame, builder, ty, &arg)?.1.into());
+            llvm_args.push(self.build_statement(frame, builder, ty, &arg)?.1.unwrap().into());
             i += 1;
         }
 
-        builder.build_direct_call(function, &llvm_args, &called).unwrap();
-        Ok(())
+        let value = builder.build_direct_call(function, &llvm_args, &format!("{called}_call_return")).unwrap();
+        Ok((ret_type, value.as_any_value_enum().into_basic_value_enum_opt()))
     }
 }
