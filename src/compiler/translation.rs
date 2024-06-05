@@ -93,3 +93,13 @@ impl<'a> IntoBasicValueEnumOption<'a> for AnyValueEnum<'a> {
         })
     }
 }
+
+pub(super) trait IntoTypeOptionBasicValue<'a> {
+    fn into_type_option_basic_value(self) -> (Type, Option<BasicValueEnum<'a>>);
+}
+
+impl<'a> IntoTypeOptionBasicValue<'a> for (Type, BasicValueEnum<'a>) {
+    fn into_type_option_basic_value(self) -> (Type, Option<BasicValueEnum<'a>>) {
+        (self.0, Some(self.1))
+    }
+}

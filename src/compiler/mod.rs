@@ -17,7 +17,7 @@ use inkwell::{
 };
 use module::ExpandedModuleTree;
 use thiserror::Error;
-use translation::IntoBasicValueEnumOption;
+use translation::{IntoBasicValueEnumOption, IntoTypeOptionBasicValue};
 
 use crate::{
     ast::{Block, Literal, Statement, Type, TypeSignature},
@@ -276,14 +276,8 @@ impl Compiler {
         statement: &Statement,
     ) -> CompilerResult<(Type, Option<BasicValueEnum>)> {
         Ok(match statement {
-            Statement::Literal(lit) => {
-                let (ty, value) = self.build_literal(ty.clone(), lit.clone())?;
-                (ty, Some(value))
-            }
-            Statement::Get(name) => {
-                let (t, v) = self.build_get(&*frame, ty.clone(), name.clone())?;
-                (t, Some(v))
-            }
+            Statement::Literal(lit) => self.build_literal(ty.clone(), lit.clone())?.into_type_option_basic_value(),
+            Statement::Get(name) => self.build_get(&*frame, ty.clone(), name.clone())?.into_type_option_basic_value(),
             Statement::Call {
                 called,
                 args,
