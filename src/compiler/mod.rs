@@ -66,8 +66,7 @@ impl Compiler {
             modules.push(self.build_module(path)?);
         }
 
-        todo!()
-        //Ok(modules)
+        Ok(modules)
     }
     fn walk_tree(
         module: &ExpandedModuleTree,
