@@ -275,7 +275,7 @@ impl Compiler {
         statement: &Statement,
     ) -> CompilerResult<(Type, Option<BasicValueEnum>)> {
         Ok(match statement {
-            Statement::Literal(lit) => self.build_literal(ty.clone(), lit.clone())?.into_type_option_basic_value(),
+            Statement::Literal(lit) => self.build_literal(builder, ty.clone(), lit.clone())?.into_type_option_basic_value(),
             Statement::Get(name) => self.build_get(&*frame, ty.clone(), name.clone())?.into_type_option_basic_value(),
             Statement::Call {
                 called,
@@ -305,7 +305,7 @@ impl Compiler {
     ) -> CompilerResult<()> {
         let (ty, value) = if let Some(value) = value {
             let (ty, value) = match *value {
-                Statement::Literal(lit) => self.build_literal(ty.clone(), lit)?,
+                Statement::Literal(lit) => self.build_literal(builder, ty.clone(), lit)?,
                 Statement::Get(name) => self.build_get(&*frame, ty.clone(), name)?,
                 _ => todo!(),
             };
@@ -317,8 +317,9 @@ impl Compiler {
         frame.variables.insert(name, (ty, value));
         Ok(())
     }
-    fn build_literal(
-        &self,
+    fn build_literal<'a>(
+        &'a self,
+        builder: &'a Builder<'a>,
         ty: Option<Type>,
         lit: Literal,
     ) -> CompilerResult<(Type, BasicValueEnum)> {
@@ -371,10 +372,13 @@ impl Compiler {
                     .into(),
                 )
             }
-            Literal::String(s) => (
-                Type::Ptr(Box::new(Type::Char)),
-                self.llvm_ctx.const_string(s.as_bytes(), true).into(),
-            ),
+            Literal::String(s) => {
+                let string = self.llvm_ctx.const_string(s.as_bytes(), true);
+                (
+                    Type::Ptr(Box::new(Type::Char)),
+                    todo!(),
+                )
+            },
             _ => todo!(),
         })
     }
