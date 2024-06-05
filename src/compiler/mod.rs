@@ -158,7 +158,7 @@ impl Compiler {
                 return Err(todo!());
             };
 
-            let function = llvm_module.add_function(&name, fn_type, Some(Linkage::Internal));
+            let function = llvm_module.add_function(&name, fn_type, None);
 
             let None = frame.entries.insert(
                 name.clone(),
