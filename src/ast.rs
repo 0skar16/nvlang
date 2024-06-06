@@ -134,6 +134,39 @@ pub enum Type {
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub enum BasicType {
+    Integer,
+    Ref,
+    Slice,
+    Struct,
+    Ptr,
+    Null,
+}
+
+impl From<Type> for BasicType {
+    fn from(value: Type) -> Self {
+        match value {
+            Type::Char
+            | Type::F32
+            | Type::F64
+            | Type::I8
+            | Type::I16
+            | Type::I32
+            | Type::I64
+            | Type::U8
+            | Type::U16
+            | Type::U32
+            | Type::U64 => Self::Integer,
+            Type::Ref(_) => Self::Ref,
+            Type::Slice(_) => Self::Slice,
+            Type::Ptr(_) => Self::Ptr,
+            Type::Struct(_) => Self::Struct,
+            Type::Null => Self::Null,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum MatchOutput {
     Block(Block),
     Statement(Box<Statement>),
