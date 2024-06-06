@@ -20,7 +20,7 @@ use thiserror::Error;
 use translation::{IntoBasicValueEnumOption, IntoTypeOptionBasicValue};
 
 use crate::{
-    ast::{Block, Literal, Statement, Type, TypeSignature},
+    ast::{Block, Literal, Operation, Statement, Type, TypeSignature},
     Str,
 };
 
@@ -291,7 +291,29 @@ impl Compiler {
                 operand,
                 operation,
                 operand2,
-            } => todo!(),
+            } => {
+                let (operation_type, Some(operand)) = self.build_statement(frame, builder, None, &operand)? else {
+                    todo!()
+                };
+
+                let (_, Some(operand2)) = self.build_statement(frame, builder, Some(operation_type.clone()), &operand2.clone().unwrap())? else {
+                    todo!()
+                };
+
+                let out: BasicValueEnum = match operation_type {
+                    Type::I32 => {
+                        match operation {
+                            Operation::Add => builder.build_int_add(operand.into_int_value(), operand2.into_int_value(), "add").unwrap().into(),
+                            Operation::Sub => builder.build_int_sub(operand.into_int_value(), operand2.into_int_value(), "sub").unwrap().into(),
+                            Operation::Mul => builder.build_int_mul(operand.into_int_value(), operand2.into_int_value(), "mul").unwrap().into(),
+                            _ => todo!(),
+                        }
+                    },
+                    _ => todo!(),
+                };
+
+                (operation_type, Some(out))
+            },
             Statement::Paren(_) => todo!(),
             Statement::Index { source, index } => todo!(),
             Statement::Ref(_) => todo!(),
