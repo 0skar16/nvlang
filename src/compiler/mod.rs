@@ -42,6 +42,7 @@ pub type CompilerResult<T> = std::result::Result<T, CompilerError>;
 pub struct Compiler {
     module_tree: ExpandedModuleTree,
     llvm_ctx: Context,
+    variable_name_idx: RefCell<u32>,
 }
 
 impl Compiler {
@@ -49,6 +50,7 @@ impl Compiler {
         Self {
             module_tree,
             llvm_ctx: Context::create(),
+            variable_name_idx: RefCell::new(0),
         }
     }
     pub fn build<'a>(&'a mut self) -> CompilerResult<Vec<Module<'a>>> {
@@ -297,10 +299,10 @@ impl Compiler {
                 if *operation == Operation::Not {
                     match BasicType::from(operation_type.clone()) {
                         BasicType::Integer => {
-                            return Ok((operation_type, Some(builder.build_not(operand.into_int_value(), "not_op").unwrap().into())))
+                            return Ok((operation_type, Some(builder.build_not(operand.into_int_value(), &self.advance_name_idx_str()).unwrap().into())))
                         },
                         BasicType::Ptr => {
-                            return Ok((operation_type, Some(builder.build_not(operand.into_pointer_value(), "not_op").unwrap().into())))
+                            return Ok((operation_type, Some(builder.build_not(operand.into_pointer_value(), &self.advance_name_idx_str()).unwrap().into())))
                         }
                         _ => todo!(),
                     }
@@ -322,7 +324,7 @@ impl Compiler {
                             .build_int_add(
                                 operand.into_int_value(),
                                 operand2.into_int_value(),
-                                "add",
+                                &self.advance_name_idx_str(),
                             )
                             .unwrap()
                             .into(),
@@ -330,7 +332,7 @@ impl Compiler {
                             .build_int_sub(
                                 operand.into_int_value(),
                                 operand2.into_int_value(),
-                                "sub",
+                                &self.advance_name_idx_str(),
                             )
                             .unwrap()
                             .into(),
@@ -338,7 +340,7 @@ impl Compiler {
                             .build_int_mul(
                                 operand.into_int_value(),
                                 operand2.into_int_value(),
-                                "mul",
+                                &self.advance_name_idx_str(),
                             )
                             .unwrap()
                             .into(),
@@ -434,7 +436,7 @@ impl Compiler {
                 )
             }
             Literal::String(s) => {
-                let string = unsafe { builder.build_global_string(&s, "string_").unwrap() };
+                let string = unsafe { builder.build_global_string(&s, &format!("string_{}", self.advance_name_idx())).unwrap() };
                 let value = unsafe {
                     builder
                         .build_gep(
@@ -444,7 +446,7 @@ impl Compiler {
                                 self.llvm_ctx.i64_type().const_int(0, false),
                                 self.llvm_ctx.i64_type().const_int(0, false),
                             ],
-                            "cast",
+                            &self.advance_name_idx_str(),
                         )
                         .unwrap()
                 };
@@ -511,11 +513,17 @@ impl Compiler {
         }
 
         let value = builder
-            .build_direct_call(function, &llvm_args, &format!("{called}_call_return"))
+            .build_direct_call(function, &llvm_args, &self.advance_name_idx_str())
             .unwrap();
         Ok((
             ret_type,
             value.as_any_value_enum().into_basic_value_enum_opt(),
         ))
+    }
+    fn advance_name_idx(&self) -> u32 {
+        self.variable_name_idx.replace_with(|old| *old + 1) + 1
+    }
+    fn advance_name_idx_str(&self) -> String {
+        format!("{}", self.advance_name_idx())
     }
 }
