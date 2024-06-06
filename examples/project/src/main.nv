@@ -3,6 +3,6 @@
 %declare use self/addition/addition;
 
 entry %main(argc: i32, argv: ptr[ptr[char]]): i32 {
-    printf%("Hello world! %i", addition(5));
+    printf%("Hello world! %i\n", addition(5));
     return 0;
 }

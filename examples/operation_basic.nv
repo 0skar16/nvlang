@@ -3,8 +3,8 @@
 entry %main(argc: i32, argv: ptr[ptr[char]]): i32 {
     a: i32 = 15;
     b: i32 = 67;
-    printf%("15 + 67 = %i", a + b);
-    printf%("15 - 67 = %i", a - b);
-    printf%("15 * 67 = %i", a * b);
+    printf%("15 + 67 = %i\n", a + b);
+    printf%("15 - 67 = %i\n", a - b);
+    printf%("15 * 67 = %i\n", a * b);
     return 0;
 }
