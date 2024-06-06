@@ -16,7 +16,7 @@ use thiserror::Error;
 use translation::{IntoBasicValueEnumOption, IntoTypeOptionBasicValue};
 
 use crate::{
-    ast::{Block, Literal, Operation, Statement, Type},
+    ast::{BasicType, Block, Literal, Operation, Statement, Type},
     Str,
 };
 
@@ -304,8 +304,8 @@ impl Compiler {
                     todo!()
                 };
 
-                let out: BasicValueEnum = match operation_type {
-                    Type::I32 => match operation {
+                let out: BasicValueEnum = match BasicType::from(operation_type.clone()) {
+                    BasicType::Integer => match operation {
                         Operation::Add => builder
                             .build_int_add(
                                 operand.into_int_value(),
