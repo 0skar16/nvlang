@@ -294,6 +294,18 @@ impl Compiler {
                     todo!()
                 };
 
+                if *operation == Operation::Not {
+                    match BasicType::from(operation_type.clone()) {
+                        BasicType::Integer => {
+                            return Ok((operation_type, Some(builder.build_not(operand.into_int_value(), "not_op").unwrap().into())))
+                        },
+                        BasicType::Ptr => {
+                            return Ok((operation_type, Some(builder.build_not(operand.into_pointer_value(), "not_op").unwrap().into())))
+                        }
+                        _ => todo!(),
+                    }
+                }
+
                 let (_, Some(operand2)) = self.build_statement(
                     frame,
                     builder,
