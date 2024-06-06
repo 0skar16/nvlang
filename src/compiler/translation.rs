@@ -5,7 +5,7 @@ use inkwell::{
     AddressSpace,
 };
 
-use crate::ast::{Type, TypeSignature};
+use crate::ast::Type;
 
 impl Type {
     pub(super) fn to_any_llvm_type<'a>(&'a self, llvm_ctx: &'a Context) -> Option<AnyTypeEnum<'a>> {

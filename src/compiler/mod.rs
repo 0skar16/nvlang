@@ -1,26 +1,22 @@
 use std::{
     cell::{RefCell, RefMut},
     collections::BTreeMap,
-    rc::Rc,
 };
 
 use frame::StackFrame;
 use inkwell::{
-    basic_block::BasicBlock,
     builder::Builder,
     context::Context,
     module::{Linkage, Module},
-    types::{BasicMetadataTypeEnum, FunctionType},
-    values::{
-        AnyValue, AnyValueEnum, BasicMetadataValueEnum, BasicValue, BasicValueEnum, FunctionValue,
-    },
+    types::BasicMetadataTypeEnum,
+    values::{AnyValue, BasicValue, BasicValueEnum, FunctionValue},
 };
 use module::ExpandedModuleTree;
 use thiserror::Error;
 use translation::{IntoBasicValueEnumOption, IntoTypeOptionBasicValue};
 
 use crate::{
-    ast::{Block, Literal, Operation, Statement, Type, TypeSignature},
+    ast::{Block, Literal, Operation, Statement, Type},
     Str,
 };
 
@@ -292,28 +288,55 @@ impl Compiler {
                 operation,
                 operand2,
             } => {
-                let (operation_type, Some(operand)) = self.build_statement(frame, builder, None, &operand)? else {
+                let (operation_type, Some(operand)) =
+                    self.build_statement(frame, builder, None, &operand)?
+                else {
                     todo!()
                 };
 
-                let (_, Some(operand2)) = self.build_statement(frame, builder, Some(operation_type.clone()), &operand2.clone().unwrap())? else {
+                let (_, Some(operand2)) = self.build_statement(
+                    frame,
+                    builder,
+                    Some(operation_type.clone()),
+                    &operand2.clone().unwrap(),
+                )?
+                else {
                     todo!()
                 };
 
                 let out: BasicValueEnum = match operation_type {
-                    Type::I32 => {
-                        match operation {
-                            Operation::Add => builder.build_int_add(operand.into_int_value(), operand2.into_int_value(), "add").unwrap().into(),
-                            Operation::Sub => builder.build_int_sub(operand.into_int_value(), operand2.into_int_value(), "sub").unwrap().into(),
-                            Operation::Mul => builder.build_int_mul(operand.into_int_value(), operand2.into_int_value(), "mul").unwrap().into(),
-                            _ => todo!(),
-                        }
+                    Type::I32 => match operation {
+                        Operation::Add => builder
+                            .build_int_add(
+                                operand.into_int_value(),
+                                operand2.into_int_value(),
+                                "add",
+                            )
+                            .unwrap()
+                            .into(),
+                        Operation::Sub => builder
+                            .build_int_sub(
+                                operand.into_int_value(),
+                                operand2.into_int_value(),
+                                "sub",
+                            )
+                            .unwrap()
+                            .into(),
+                        Operation::Mul => builder
+                            .build_int_mul(
+                                operand.into_int_value(),
+                                operand2.into_int_value(),
+                                "mul",
+                            )
+                            .unwrap()
+                            .into(),
+                        _ => todo!(),
                     },
                     _ => todo!(),
                 };
 
                 (operation_type, Some(out))
-            },
+            }
             Statement::Paren(_) => todo!(),
             Statement::Index { source, index } => todo!(),
             Statement::Ref(_) => todo!(),
