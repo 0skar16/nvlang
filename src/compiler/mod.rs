@@ -275,8 +275,12 @@ impl Compiler {
         statement: &Statement,
     ) -> CompilerResult<(Type, Option<BasicValueEnum>)> {
         Ok(match statement {
-            Statement::Literal(lit) => self.build_literal(builder, ty.clone(), lit.clone())?.into_type_option_basic_value(),
-            Statement::Get(name) => self.build_get(&*frame, ty.clone(), name.clone())?.into_type_option_basic_value(),
+            Statement::Literal(lit) => self
+                .build_literal(builder, ty.clone(), lit.clone())?
+                .into_type_option_basic_value(),
+            Statement::Get(name) => self
+                .build_get(&*frame, ty.clone(), name.clone())?
+                .into_type_option_basic_value(),
             Statement::Call {
                 called,
                 args,
@@ -373,12 +377,22 @@ impl Compiler {
                 )
             }
             Literal::String(s) => {
-                let string = self.llvm_ctx.const_string(s.as_bytes(), true);
-                (
-                    Type::Ptr(Box::new(Type::Char)),
-                    todo!(),
-                )
-            },
+                let string = unsafe { builder.build_global_string(&s, "string_").unwrap() };
+                let value = unsafe {
+                    builder
+                        .build_gep(
+                            string.as_basic_value_enum().get_type(),
+                            string.as_pointer_value(),
+                            &[
+                                self.llvm_ctx.i64_type().const_int(0, false),
+                                self.llvm_ctx.i64_type().const_int(0, false),
+                            ],
+                            "cast",
+                        )
+                        .unwrap()
+                };
+                (Type::Ptr(Box::new(Type::Char)), value.into())
+            }
             _ => todo!(),
         })
     }

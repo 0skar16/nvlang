@@ -6,7 +6,8 @@ use thiserror::Error;
 use crate::lexer::token::{Number, Punctuation, Token, TokenKind, TokenKindDesc};
 
 use crate::ast::{
-    Block, Entry, Extern, Function, Literal, Module, Operation, Statement, Type, TypeSignature, Use, UseSource
+    Block, Entry, Extern, Function, Literal, Module, Operation, Statement, Type, TypeSignature,
+    Use, UseSource,
 };
 use crate::Str;
 #[derive(Debug, Clone, PartialEq, Error)]
@@ -384,7 +385,7 @@ impl Parser {
                         } else {
                             break;
                         }
-                    },
+                    }
                     _ => break,
                 }
             } else {
@@ -474,12 +475,17 @@ impl Parser {
                     }
                 }
                 Punctuation::EqualsTo => Operation::Equal,
-                _ => return Err(ParserError::UnexpectedToken{tok: op, filename: self.filename.to_string()}),
+                _ => {
+                    return Err(ParserError::UnexpectedToken {
+                        tok: op,
+                        filename: self.filename.to_string(),
+                    })
+                }
             },
             _ => unreachable!(),
         };
         let operator = self.parse_statement(end)?;
-        Ok(Statement::Operation{
+        Ok(Statement::Operation {
             operand: Box::new(operand),
             operation: op,
             operand2: Some(Box::new(operator)),
