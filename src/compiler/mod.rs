@@ -524,6 +524,6 @@ impl Compiler {
         self.variable_name_idx.replace_with(|old| *old + 1) + 1
     }
     fn advance_name_idx_str(&self) -> String {
-        format!("{}", self.advance_name_idx())
+        format!("var_{}", self.advance_name_idx())
     }
 }
