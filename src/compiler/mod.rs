@@ -1,6 +1,5 @@
 use std::{
-    cell::{RefCell, RefMut},
-    collections::BTreeMap,
+    borrow::Borrow, cell::{RefCell, RefMut}, collections::BTreeMap
 };
 
 use frame::StackFrame;
@@ -366,18 +365,20 @@ impl Compiler {
         ty: Option<Type>,
         value: Option<Box<Statement>>,
     ) -> CompilerResult<()> {
-        let (ty, value) = if let Some(value) = value {
-            let (ty, value) = match *value {
-                Statement::Literal(lit) => self.build_literal(builder, ty.clone(), lit)?,
-                Statement::Get(name) => self.build_get(&*frame, ty.clone(), name)?,
-                _ => todo!(),
-            };
-            (ty, Some(value))
+        let (value_ty, value) = if let Some(value) = value {
+            let (value_ty, value) = self.build_statement(frame.borrow(), builder, ty.clone(), &value)?;
+            (value_ty, Some(value.unwrap()))
         } else {
-            (ty.unwrap_or(Type::I32), None)
+            (ty.clone().unwrap(), None)
         };
 
-        frame.variables.insert(name, (ty, value));
+        if let Some(expected_type) = ty {
+            if expected_type != value_ty {
+                return Err(todo!());
+            }
+        }
+
+        frame.variables.insert(name, (value_ty, value));
         Ok(())
     }
     fn build_literal<'a>(
