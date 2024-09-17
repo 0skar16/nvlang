@@ -49,10 +49,7 @@ impl Type {
             Type::U64 => todo!(),
             Type::Ref(_) => todo!(),
             Type::Slice(_) => todo!(),
-            Type::Ptr(ty) => ty
-                .to_basic_type(llvm_ctx)?
-                .ptr_type(AddressSpace::default())
-                .into(),
+            Type::Ptr(_) => llvm_ctx.ptr_type(AddressSpace::default()).into(),
             Type::Struct(_) => todo!(),
             _ => return None,
         })
