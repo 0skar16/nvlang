@@ -586,21 +586,23 @@ impl Parser {
         self.eat_ex_kind(TokenKind::Punctuation(Punctuation::LeftParen), end)?;
 
         let mut args = vec![];
-        loop {
-            let TokenKind::ID(arg_name) = self.eat_ex(TokenKindDesc::ID, end)?.token else {
-                unreachable!()
-            };
-
-            self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
-
-            let _type = self.parse_type(end)?;
-
-            args.push((arg_name, _type));
-
-            if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Comma) {
-                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Comma), end)?;
-            } else {
-                break;
+        if self.peek(0, end)?.token != TokenKind::Punctuation(Punctuation::RightParen) {
+            loop {
+                let TokenKind::ID(arg_name) = self.eat_ex(TokenKindDesc::ID, end)?.token else {
+                    unreachable!()
+                };
+    
+                self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Colon), end)?;
+    
+                let _type = self.parse_type(end)?;
+    
+                args.push((arg_name, _type));
+    
+                if self.peek(0, end)?.token == TokenKind::Punctuation(Punctuation::Comma) {
+                    self.eat_ex_kind(TokenKind::Punctuation(Punctuation::Comma), end)?;
+                } else {
+                    break;
+                }
             }
         }
 
